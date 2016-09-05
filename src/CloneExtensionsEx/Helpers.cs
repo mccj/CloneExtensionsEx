@@ -85,11 +85,14 @@ namespace CloneExtensionsEx
                 return (PropertyT)clonedObjects[propertySource];
             }
             var _excludeNames = GetExcludeName(excludeNames, info?.Name);
-            var d = new ResolveArgs(propertySource, typeof(T), _excludeNames, flags, initializers);
+            var d = new ResolveArgs(source, typeof(T), info, propertySource, typeof(PropertyT), _excludeNames, flags, initializers, createObjectFun, customResolveFun, clonedObjects);
             customResolveFun?.Invoke(d);
             if (d.IsResolve)
             {
-                clonedObjects.Add(propertySource, d.NewValue);
+                if (!clonedObjects.ContainsKey(propertySource))
+                {
+                    clonedObjects.Add(propertySource, d.NewValue);
+                }
                 return (PropertyT)d.NewValue;
             }
             else
