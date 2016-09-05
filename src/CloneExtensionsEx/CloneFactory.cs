@@ -46,9 +46,6 @@ namespace CloneExtensionsEx
 
         public static T GetClone<T>(this T source, CloningFlags flags, IDictionary<Type, Func<object, object>> initializers)
         {
-            if (initializers == null)
-                throw new ArgumentNullException();
-
             //return GetClone(source, flags, initializers);
             return GetClone(source,
                 new string[] { },
@@ -62,6 +59,9 @@ namespace CloneExtensionsEx
 
         public static T GetClone<T>(this T source, string[] excludeNames, CloningFlags flags, IDictionary<Type, Func<object, object>> initializers, Func<Type, object, object> createObjectFun, Action<ResolveArgs> customResolveFun)
         {
+            if (initializers == null)
+                throw new ArgumentNullException();
+
             //创建实例的方法
             //return CloneManager<T>.Clone(source, excludeNames, flags, initializers, createObjectFun, clonedObjects);
             return GetClone(source, excludeNames, flags, initializers, createObjectFun, customResolveFun, new Dictionary<object, object>());
