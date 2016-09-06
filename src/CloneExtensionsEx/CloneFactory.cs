@@ -55,8 +55,6 @@ namespace CloneExtensionsEx
                 null);
         }
 
-
-
         public static T GetClone<T>(this T source, string[] excludeNames, CloningFlags flags, IDictionary<Type, Func<object, object>> initializers, Func<Type, object, object> createObjectFun, Action<ResolveArgs> customResolveFun)
         {
             if (initializers == null)
@@ -68,6 +66,21 @@ namespace CloneExtensionsEx
         }
 
         internal static T GetClone<T>(this T source, string[] excludeNames, CloningFlags flags, IDictionary<Type, Func<object, object>> initializers, Func<Type, object, object> createObjectFun, Action<ResolveArgs> customResolveFun, Dictionary<object, object> clonedObjects)
+        {
+            var _type = typeof(T);
+            //var constructor = _type.GetConstructor(new Type[0]);
+            //if (_type.IsAbstract || _type.IsInterface || (!_type.IsValueType && constructor == null)|| _type==typeof(object))
+            //{
+            //    if (source == null) return default(T);
+            //    return (T)typeof(CloneFactory).GetMethod(nameof(GetCloneEx), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Instance).MakeGenericMethod(source.GetType()).Invoke(null, new object[] { source, excludeNames, flags, initializers, createObjectFun, customResolveFun, clonedObjects });
+            //}
+            //else
+            {
+                return GetCloneEx<T>(source, excludeNames, flags, initializers, createObjectFun, customResolveFun, clonedObjects);
+            }
+        }
+
+        private static T GetCloneEx<T>(this T source, string[] excludeNames, CloningFlags flags, IDictionary<Type, Func<object, object>> initializers, Func<Type, object, object> createObjectFun, Action<ResolveArgs> customResolveFun, Dictionary<object, object> clonedObjects)
         {
             return CloneManager<T>.Clone(source, excludeNames, flags, initializers, createObjectFun, customResolveFun, clonedObjects);
         }

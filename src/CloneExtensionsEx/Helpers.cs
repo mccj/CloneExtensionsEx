@@ -97,6 +97,10 @@ namespace CloneExtensionsEx
             }
             else
             {
+                var _type = typeof(PropertyT);
+                var constructor = _type.GetConstructor(new Type[0]);
+                if (_type.IsAbstract || _type.IsInterface || (!_type.IsValueType && constructor == null))
+                    Helpers.GetThrowInvalidOperationExceptionExpression(_type);
                 return CloneFactory.GetClone(propertySource, _excludeNames, flags, initializers, createObjectFun, customResolveFun, clonedObjects);
             }
         }

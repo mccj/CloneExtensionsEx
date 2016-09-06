@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Reflection;
 
@@ -23,6 +24,10 @@ namespace CloneExtensionsEx
             this.clonedObjects = clonedObjects;
         }
 
+        public ResolveArgs()
+        {
+        }
+
         public object NewValue { get; set; } = null;
         public bool IsResolve { get; set; } = false;
         public object Source { get; }
@@ -35,7 +40,17 @@ namespace CloneExtensionsEx
         public IDictionary<Type, Func<object, object>> Initializers { get; }
         public Func<Type, object, object> createObjectFun { get; }
         public Action<ResolveArgs> customResolveFun { get; }
-        public T GetClone<T>(T source)
+        public object GetClone(object source)
+        {
+            var getCloneMethod = typeof(ResolveArgs).GetMethod(nameof(GetCloneEx),BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
+            return getCloneMethod.MakeGenericMethod(PropertySourceType).Invoke(this, new object[] { source });
+        }
+        public object GetClone(object source,Type type)
+        {
+            var getCloneMethod = typeof(ResolveArgs).GetMethod(nameof(GetCloneEx), BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
+            return getCloneMethod.MakeGenericMethod(type).Invoke(this, new object[] { source });
+        }
+        private T GetCloneEx<T>(T source)
         {
             return GetClone(source, this.ExcludeNames, this.CloningFlags, this.Initializers, this.createObjectFun, this.customResolveFun);
         }

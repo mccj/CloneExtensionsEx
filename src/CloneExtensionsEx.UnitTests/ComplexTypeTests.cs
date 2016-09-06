@@ -28,7 +28,12 @@ namespace CloneExtensionsEx.UnitTests
         [TestMethod]
         public void GetClone_SameTypepProperty_Cloned()
         {
-            var source = new SelfReferencedClass { Value = new SelfReferencedClass() };
+            //var sss = new ResolveArgs();
+            //sss.GetClone( "ssssss");
+
+
+
+            var source = new SelfReferencedClass { Value = new SelfReferencedClass(),Value2=new List<SelfReferencedClass> { new SelfReferencedClass() } };
             var target = CloneFactory.GetClone(source);
             Assert.IsNotNull(target.Value);
             Assert.IsNull(target.Value.Value);
@@ -104,10 +109,10 @@ namespace CloneExtensionsEx.UnitTests
             public int _field;
             public int Property { get; set; }
         }
-
-        class SelfReferencedClass
+              class SelfReferencedClass
         {
             public SelfReferencedClass Value { get; set; }
+            public object Value2 { get; set; }
         }
 
         interface IInterface

@@ -68,7 +68,8 @@ namespace CloneExtensionsEx.ExpressionFactories
 
             // parameterless constructor
             var constructor = _type.GetConstructor(new Type[0]);
-            var initType = (_type.IsAbstract || _type.IsInterface || (!_type.IsValueType && constructor == null)) ?
+            var initType =
+                (_type.IsAbstract || _type.IsInterface || (!_type.IsValueType && constructor == null)) ?
                 Helpers.GetThrowInvalidOperationExceptionExpression(_type) :
                 Expression.Assign(
                     Target,
@@ -99,11 +100,21 @@ namespace CloneExtensionsEx.ExpressionFactories
 
             return GetMembersCloneExpression(fields.ToArray(), getItemCloneExpression);
         }
-
+        private PropertyInfo[] GetProperties(Type _type)
+        {
+            if (_type.IsInterface)
+            {
+                return _type.GetInterfaces().Concat(new[] { _type }).Distinct().SelectMany(f => f.GetProperties()).Distinct().ToArray();
+            }
+            else
+            {
+                return _type.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+            }
+        }
         private Expression GetPropertiesCloneExpression(Func<Type, Expression, MemberInfo, Type, Expression, Expression> getItemCloneExpression)
         {
             // get all public properties with public setter and getter, which are not indexed properties
-            var properties = from p in _type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+            var properties = from p in GetProperties(_type)
                              let setMethod = p.GetSetMethod(false)
                              let getMethod = p.GetGetMethod(false)
                              where !p.GetCustomAttributes(typeof(NonClonedAttribute), true).Any()
