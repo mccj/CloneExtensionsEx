@@ -43,6 +43,28 @@ namespace CloneExtensionsEx
         {
             return GetClone(source, _defaultFlags, initializers);
         }
+        public static T GetClone<T>(this T source, IDictionary<Type, Func<object, object>> initializers, Action<ResolveArgs> customResolveFun)
+        {
+            return GetClone(source,
+                new string[] { },
+                _defaultFlags,
+                initializers,
+                null,
+                customResolveFun);
+        }
+        public static T GetClone<T>(this T source, Func<Type, object, object> createObjectFun)
+        {
+            return GetClone(source, createObjectFun, null);
+        }
+        public static T GetClone<T>(this T source,  Func<Type, object, object> createObjectFun, Action<ResolveArgs> customResolveFun)
+        {
+            return GetClone(source,
+            new string[] { },
+            _defaultFlags,
+            CustomInitializers,
+            createObjectFun,
+            customResolveFun);
+        }
 
         public static T GetClone<T>(this T source, CloningFlags flags, IDictionary<Type, Func<object, object>> initializers)
         {
@@ -65,9 +87,11 @@ namespace CloneExtensionsEx
             return GetClone(source, excludeNames, flags, initializers, createObjectFun, customResolveFun, new Dictionary<object, object>());
         }
 
-        internal static T GetClone<T>(this T source, string[] excludeNames, CloningFlags flags, IDictionary<Type, Func<object, object>> initializers, Func<Type, object, object> createObjectFun, Action<ResolveArgs> customResolveFun, Dictionary<object, object> clonedObjects)
+        public static T GetClone<T>(this T source, string[] excludeNames, CloningFlags flags, IDictionary<Type, Func<object, object>> initializers, Func<Type, object, object> createObjectFun, Action<ResolveArgs> customResolveFun, Dictionary<object, object> clonedObjects)
         {
-            var _type = typeof(T);
+            if (clonedObjects == null)
+                clonedObjects = new Dictionary<object, object>();
+            //var _type = typeof(T);
             //var constructor = _type.GetConstructor(new Type[0]);
             //if (_type.IsAbstract || _type.IsInterface || (!_type.IsValueType && constructor == null)|| _type==typeof(object))
             //{

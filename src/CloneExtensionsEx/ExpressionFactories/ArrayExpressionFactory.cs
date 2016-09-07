@@ -51,7 +51,7 @@ namespace CloneExtensionsEx.ExpressionFactories
                         Expression.Block(
                             Expression.Assign(
                                 Expression.ArrayAccess(Target, counter),
-                                getItemCloneExpression(typeof(object), Expression.Constant(null, typeof(object)), null, _itemType, Expression.ArrayAccess(Source, counter))
+                                getItemCloneExpression(typeof(T), Source, null, _itemType, Expression.ArrayAccess(Source, counter))
                             ),
                             Expression.AddAssign(counter, Expression.Constant(1))
                         ),

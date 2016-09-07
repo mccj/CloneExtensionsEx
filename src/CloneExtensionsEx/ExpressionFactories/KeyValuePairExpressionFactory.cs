@@ -43,8 +43,8 @@ namespace CloneExtensionsEx.ExpressionFactories
                     Target,
                     Expression.New(
                         _constructor,
-                        getItemCloneExpression(typeof(object), Expression.Constant(null, typeof(object)), null, _keyType, Expression.Property(Source, "Key")),
-                        getItemCloneExpression(typeof(object), Expression.Constant(null, typeof(object)), null, _valueType, Expression.Property(Source, "Value"))));
+                        getItemCloneExpression(typeof(T), Source, null, _keyType, Expression.Property(Source, "Key")),
+                        getItemCloneExpression(typeof(T), Source, null, _valueType, Expression.Property(Source, "Value"))));
         }
     }
 }

@@ -39,7 +39,7 @@ namespace CloneExtensionsEx.ExpressionFactories
             var loopCount = Math.Min(_genericTypes.Length, 7);
             for (int i = 0; i < loopCount; i++)
             {
-                itemsCloneExpressions[i] = getItemCloneExpression(typeof(object), Expression.Constant(null, typeof(object)), null,
+                itemsCloneExpressions[i] = getItemCloneExpression(typeof(T), Source, null,
                                             _genericTypes[i],
                                             Expression.Property(
                                                 Source,
@@ -48,7 +48,7 @@ namespace CloneExtensionsEx.ExpressionFactories
 
             // add Rest expression if it's necessary
             if (_genericTypes.Length == 8)
-                itemsCloneExpressions[7] = getItemCloneExpression(typeof(object), Expression.Constant(null, typeof(object)), null,
+                itemsCloneExpressions[7] = getItemCloneExpression(typeof(T), Source, null,
                                             _genericTypes[7],
                                             Expression.Property(
                                                 Source,

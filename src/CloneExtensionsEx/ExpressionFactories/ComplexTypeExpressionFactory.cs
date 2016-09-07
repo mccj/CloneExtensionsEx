@@ -171,7 +171,7 @@ namespace CloneExtensionsEx.ExpressionFactories
                     Expression.IfThenElse(
                         Expression.NotEqual(moveNextCall, Expression.Constant(false, typeof(bool))),
                         Expression.Call(collection, "Add", null,
-                            GetCloneMethodCall(itemType, currentProperty)),
+                            GetCloneMethodCall(_type, Source, null, itemType, currentProperty)),
                         Expression.Break(breakLabel)
                     ),
                     breakLabel

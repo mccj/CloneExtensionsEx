@@ -44,10 +44,10 @@ namespace CloneExtensionsEx.ExpressionFactories
         public abstract Expression GetDeepCloneExpression();
 
         public abstract Expression GetShallowCloneExpression();
-        protected Expression GetCloneMethodCall(Type type, Expression item)
-        {
-            return GetCloneMethodCall(typeof(object), Expression.Constant(null, typeof(object)), null, type, item);
-        }
+        //protected Expression GetCloneMethodCall(Type type, Expression item)
+        //{
+        //    return GetCloneMethodCall(typeof(T), _source, null, type, item);
+        //}
         protected Expression GetCloneMethodCall(Type type, Expression source, System.Reflection.MemberInfo info, Type propertyType, Expression propertySource)
         {
             return Helpers.GetCloneMethodCall(type, source, info, propertyType, propertySource, ExcludeNames, Flags, Initializers, CreateObjectFun, CustomResolveFun, ClonedObjects);
