@@ -7,7 +7,7 @@
     <OutputType>Exe</OutputType>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="BenchmarkDotNet" Version="0.10.9" />
+    <PackageReference Include="BenchmarkDotNet" Version="0.13.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\CloneExtensionsEx\CloneExtensionsEx.csproj" />
