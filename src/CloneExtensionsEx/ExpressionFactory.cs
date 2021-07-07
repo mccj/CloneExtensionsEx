@@ -1,6 +1,7 @@
 ﻿using CloneExtensionsEx.ExpressionFactories;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 
 namespace CloneExtensionsEx
@@ -8,7 +9,7 @@ namespace CloneExtensionsEx
     class ExpressionFactory<T>
     {
         private static Type _type = typeof(T);
-        private static Expression _typeExpression = Expression.Constant(_type, typeof(Type));
+        //private static Expression _typeExpression = Expression.Constant(_type, typeof(Type));
         private static Expression nullConstant = null;
 
         private static ParameterExpression source = Expression.Parameter(_type, "source");
@@ -18,7 +19,6 @@ namespace CloneExtensionsEx
         private static ParameterExpression createObjectFun = Expression.Parameter(typeof(Func<Type, object, object>), "createObjectFun");
         private static ParameterExpression customResolveFun = Expression.Parameter(typeof(Action<ResolveArgs>), "customResolveFun");
         private static ParameterExpression excludeNames = Expression.Parameter(typeof(string[]), "excludeNames");
-
         private static ParameterExpression target = Expression.Variable(_type, "target");
 
         static ExpressionFactory()
@@ -26,9 +26,11 @@ namespace CloneExtensionsEx
             Initialize();
         }
 
+        //public static Expression<Func<T, CloningFlags, IDictionary<Type, Func<object, object>>, Dictionary<object, object>, T>> CloneExpression { get; private set; }
         public static Expression<Func<T, string[], CloningFlags, IDictionary<Type, Func<object, object>>, Func<Type, object, object>, Action<ResolveArgs>, Dictionary<object, object>, T>> CloneExpression { get; private set; }
 
-        internal Func<T, string[], CloningFlags, IDictionary<Type, Func<object, object>>, Func<Type, object, object>, Action<ResolveArgs>, Dictionary<object, object>, T> GetCloneFunc()
+        //internal Func<T, CloningFlags, IDictionary<Type, Func<object, object>>, Dictionary<object, object>, T> GetCloneFunc()
+         internal Func<T, string[], CloningFlags, IDictionary<Type, Func<object, object>>, Func<Type, object, object>, Action<ResolveArgs>, Dictionary<object, object>, T> GetCloneFunc()
         {
             return CloneExpression.Compile();
         }
@@ -102,19 +104,32 @@ namespace CloneExtensionsEx
 
         private static IExpressionFactory<T> GetExpressionFactory(ParameterExpression source, Expression target, ParameterExpression excludeNames, ParameterExpression flags, ParameterExpression initializers, ParameterExpression createObjectFun, ParameterExpression customResolveFun, ParameterExpression clonedObjects, LabelTarget returnLabel)
         {
-            if (_type.IsPrimitiveOrKnownImmutable() || typeof(Delegate).IsAssignableFrom(_type))
+            if (_type.UsePrimitive())
             {
                 return new PrimitiveTypeExpressionFactory<T>(source, target, excludeNames, flags, initializers, createObjectFun, customResolveFun, clonedObjects);
             }
-            else if (_type.IsGenericType && _type.GetGenericTypeDefinition() == typeof(Nullable<>))
+            else if (_type.IsGenericType() && _type.GetGenericTypeDefinition() == typeof(Nullable<>))
             {
                 return new NullableExpressionFactory<T>(source, target, excludeNames, flags, initializers, createObjectFun, customResolveFun, clonedObjects);
             }
             else if (_type.IsArray)
             {
-                return new ArrayExpressionFactory<T>(source, target, excludeNames, flags, initializers, createObjectFun, customResolveFun, clonedObjects);
+                var itemType = _type
+                    .GetInterfaces()
+                    .First(x => x.IsGenericType() && x.GetGenericTypeDefinition() == typeof(ICollection<>))
+                    .GetGenericArguments()
+                    .First();
+
+                if (itemType.UsePrimitive())
+                {
+                    return new ArrayPrimitiveTypeExpressionFactory<T>(source, target, excludeNames, flags, initializers, createObjectFun, customResolveFun, clonedObjects);
+                }
+                else
+                {
+                    return new ArrayExpressionFactory<T>(source, target, excludeNames, flags, initializers, createObjectFun, customResolveFun, clonedObjects);
+                }
             }
-            else if (_type.IsGenericType &&
+            else if (_type.IsGenericType() &&
                 (_type.GetGenericTypeDefinition() == typeof(Tuple<>)
                 || _type.GetGenericTypeDefinition() == typeof(Tuple<,>)
                 || _type.GetGenericTypeDefinition() == typeof(Tuple<,,>)
@@ -126,9 +141,18 @@ namespace CloneExtensionsEx
             {
                 return new TupleExpressionFactory<T>(source, target, excludeNames, flags, initializers, createObjectFun, customResolveFun, clonedObjects);
             }
-            else if (_type.IsGenericType && _type.GetGenericTypeDefinition() == typeof(KeyValuePair<,>))
+            else if (_type.IsGenericType() && _type.GetGenericTypeDefinition() == typeof(KeyValuePair<,>))
             {
-                return new KeyValuePairExpressionFactory<T>(source, target, excludeNames, flags, initializers, createObjectFun, customResolveFun, clonedObjects);
+                return new KeyValuePairExpressionFactory<T>(source,  target, excludeNames, flags, initializers, createObjectFun, customResolveFun, clonedObjects);
+            }
+            else if (_type.IsGenericType() && _type.GetGenericTypeDefinition() == typeof(List<>))
+            {
+                var itemType = _type.GetGenericArguments()[0];
+
+                if (itemType.UsePrimitive())
+                {
+                    return new ListPrimitiveTypeExpressionFactory<T>(source, target, excludeNames, flags, initializers, createObjectFun, customResolveFun, clonedObjects);
+                }
             }
 
             return new ComplexTypeExpressionFactory<T>(source, target, excludeNames, flags, initializers, createObjectFun, customResolveFun, clonedObjects);

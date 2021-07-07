@@ -40,7 +40,10 @@ namespace CloneExtensionsEx.ExpressionFactories
         {
             var structType = typeof(T).GetGenericArguments()[0];
 
-            var cloneCall = GetCloneMethodCall(typeof(T),Source,null,structType, Expression.Property(Source, "Value"));
+            var cloneCall = structType.UsePrimitive() ?
+                Expression.Property(Source, "Value") :
+                GetCloneMethodCall(typeof(T), Source, null, structType, Expression.Property(Source, "Value"));
+
             var newNullable = Expression.New(typeof(T).GetConstructor(new[] { _structType }), cloneCall);
 
             return

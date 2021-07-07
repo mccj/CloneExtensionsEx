@@ -9,6 +9,8 @@ namespace CloneExtensionsEx.ExpressionFactories
 {
     class ComplexTypeExpressionFactory<T> : DeepShallowExpressionFactoryBase<T>
     {
+        private static Type _objectType = typeof(object);
+
         Type _type;
         Expression _typeExpression;
         public ComplexTypeExpressionFactory(ParameterExpression source, Expression target, ParameterExpression excludeNames, ParameterExpression flags, ParameterExpression initializers, ParameterExpression createObjectFun, ParameterExpression customResolveFun, ParameterExpression clonedObjects)
@@ -22,7 +24,7 @@ namespace CloneExtensionsEx.ExpressionFactories
         {
             get
             {
-                return !_type.IsValueType;
+                return !_type.IsValueType();
             }
         }
 
@@ -30,7 +32,7 @@ namespace CloneExtensionsEx.ExpressionFactories
         {
             get
             {
-                return !_type.IsValueType;
+                return !_type.IsValueType();
             }
         }
 
@@ -52,10 +54,7 @@ namespace CloneExtensionsEx.ExpressionFactories
 
             return Expression.Block(initialization, GetAddToClonedObjectsExpression(), fields, properties, collectionItems);
         }
-        /// <summary>
-        /// 获取初始化表达式
-        /// </summary>
-        /// <returns></returns>
+
         private Expression GetInitializationExpression()
         {
             // initializers.ContainsKey method call
@@ -68,60 +67,51 @@ namespace CloneExtensionsEx.ExpressionFactories
 
             // parameterless constructor
             var constructor = _type.GetConstructor(new Type[0]);
-            var initType =
-                (_type.IsAbstract || _type.IsInterface || (!_type.IsValueType && constructor == null)) ?
-                Helpers.GetThrowInvalidOperationExceptionExpression(_type) :
-                Expression.Assign(
-                    Target,
-                    _type.IsValueType ? (Expression)Source : Expression.New(_type)
-                );
 
             return Expression.IfThenElse(
                 containsKeyCall,
                 Expression.Assign(Target, initializerCall),
-                ////////////////////////////////////////
-                Expression.IfThenElse(
-                    Expression.NotEqual(CreateObjectFun, Expression.Constant(null)),
-                        Expression.Assign(
-                            Target,
-                            Expression.Convert(Expression.Call(CreateObjectFun, "Invoke", null, _typeExpression, Expression.Convert(Source, typeof(object))), _type)
-                        ),
-                    initType
-                )
+                (_type.IsAbstract() || _type.IsInterface() || (!_type.IsValueType() && constructor == null)) ?
+                    Helpers.GetThrowInvalidOperationExceptionExpression(_type) :
+                    Expression.Assign(
+                        Target,
+                        _type.IsValueType() ? (Expression)Source : Expression.New(_type)
+                    )
             );
         }
 
         private Expression GetFieldsCloneExpression(Func<Type, Expression, MemberInfo, Type, Expression, Expression> getItemCloneExpression)
         {
-            var fields = from f in _type.GetFields(BindingFlags.Public | BindingFlags.Instance)
+            var fields = from f in _type.GetTypeInfo().GetFields(BindingFlags.Public | BindingFlags.Instance)
                          where !f.GetCustomAttributes(typeof(NonClonedAttribute), true).Any()
                          where !f.IsInitOnly
                          select new Member(f, f.FieldType);
 
             return GetMembersCloneExpression(fields.ToArray(), getItemCloneExpression);
         }
-        private PropertyInfo[] GetProperties(Type _type)
-        {
-            if (_type.IsInterface)
-            {
-                return _type.GetInterfaces().Concat(new[] { _type }).Distinct().SelectMany(f => f.GetProperties()).Distinct().ToArray();
-            }
-            else
-            {
-                return _type.GetProperties(BindingFlags.Public | BindingFlags.Instance);
-            }
-        }
+
         private Expression GetPropertiesCloneExpression(Func<Type, Expression, MemberInfo, Type, Expression, Expression> getItemCloneExpression)
         {
-            // get all public properties with public setter and getter, which are not indexed properties
-            var properties = from p in GetProperties(_type)
-                             let setMethod = p.GetSetMethod(false)
-                             let getMethod = p.GetGetMethod(false)
-                             where !p.GetCustomAttributes(typeof(NonClonedAttribute), true).Any()
-                             where setMethod != null && getMethod != null && !p.GetIndexParameters().Any()
-                             select new Member(p, p.PropertyType);
+            // get all private fields with `>k_BackingField` in case we can use them instead of automatic properties
+            var backingFields = GetBackingFields(_type).ToDictionary(f => new BackingFieldInfo(f.DeclaringType, f.Name));
 
-            return GetMembersCloneExpression(properties.ToArray(), getItemCloneExpression);
+            // use the backing fields if available, otherwise use property
+            var members = new List<Member>();
+            var properties = GetProperties(_type);
+            foreach (var property in properties)
+            {
+                FieldInfo fieldInfo;
+                if (backingFields.TryGetValue(new BackingFieldInfo(property.DeclaringType, "<" + property.Name + ">k__BackingField"), out fieldInfo))
+                {
+                    members.Add(new Member(fieldInfo, fieldInfo.FieldType));
+                }
+                else
+                {
+                    members.Add(new Member(property, property.PropertyType));
+                }
+            }
+
+            return GetMembersCloneExpression(members.ToArray(), getItemCloneExpression);
         }
 
         private Expression GetMembersCloneExpression(Member[] members, Func<Type, Expression, MemberInfo, Type, Expression, Expression> getItemCloneExpression)
@@ -133,14 +123,16 @@ namespace CloneExtensionsEx.ExpressionFactories
                 members.Select(m =>
                     Expression.Assign(
                         Expression.MakeMemberAccess(Target, m.Info),
-                        Helpers.处理ExcludeNames(getItemCloneExpression(_type, Source, m.Info, m.Type, Expression.MakeMemberAccess(Source, m.Info)), ExcludeNames, m)
+                        m.Type.UsePrimitive() ?
+                            Expression.MakeMemberAccess(Source, m.Info) :
+                           Helpers.处理ExcludeNames(getItemCloneExpression(_type, Source, m.Info, m.Type, Expression.MakeMemberAccess(Source, m.Info)), ExcludeNames, m)
                         )));
         }
 
         private Expression GetCollectionItemsExpression(Func<Type, Expression, MemberInfo, Type, Expression, Expression> getItemCloneExpression)
         {
             var collectionType = _type.GetInterfaces()
-                                      .FirstOrDefault(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(ICollection<>));
+                                      .FirstOrDefault(x => x.IsGenericType() && x.GetGenericTypeDefinition() == typeof(ICollection<>));
             if (collectionType == null)
                 return Expression.Empty();
 
@@ -159,9 +151,13 @@ namespace CloneExtensionsEx.ExpressionFactories
             var getEnumeratorCall = Expression.Call(Expression.Convert(Source, enumerableType), "GetEnumerator", null);
             var assignToEnumerator = Expression.Assign(enumerator, Expression.Convert(getEnumeratorCall, enumeratorType));
             var assignToCollection = Expression.Assign(collection, Expression.Convert(Target, collectionType));
-            var moveNextCall = Expression.Call(enumerator, typeof(IEnumerator).GetMethod("MoveNext"));
+            var moveNextCall = Expression.Call(enumerator, typeof(IEnumerator).GetTypeInfo().GetMethod("MoveNext"));
             var currentProperty = Expression.Property(enumerator, "Current");
             var breakLabel = Expression.Label();
+
+            var cloneItemCall = itemType.UsePrimitive() ?
+                currentProperty :
+                GetCloneMethodCall(_type, Source, null, itemType, currentProperty);
 
             return Expression.Block(
                 new[] { enumerator, collection },
@@ -170,8 +166,7 @@ namespace CloneExtensionsEx.ExpressionFactories
                 Expression.Loop(
                     Expression.IfThenElse(
                         Expression.NotEqual(moveNextCall, Expression.Constant(false, typeof(bool))),
-                        Expression.Call(collection, "Add", null,
-                            GetCloneMethodCall(_type, Source, null, itemType, currentProperty)),
+                        Expression.Call(collection, "Add", null, cloneItemCall),
                         Expression.Break(breakLabel)
                     ),
                     breakLabel
@@ -179,5 +174,64 @@ namespace CloneExtensionsEx.ExpressionFactories
             );
         }
 
+        private static IEnumerable<FieldInfo> GetBackingFields(Type type)
+        {
+            TypeInfo typeInfo = type.GetTypeInfo();
+
+            while (typeInfo != null && typeInfo.UnderlyingSystemType != _objectType)
+            {
+                foreach (var field in typeInfo.GetFields(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly))
+                {
+                    if (field.Name.Contains(">k__BackingField") && field.DeclaringType == typeInfo.UnderlyingSystemType)
+                        yield return field;
+                }
+
+                typeInfo = typeInfo.BaseType?.GetTypeInfo();
+            }
+        }
+
+        private static IEnumerable<PropertyInfo> GetProperties(Type type)
+        {
+            TypeInfo typeInfo = type.GetTypeInfo();
+
+            while (typeInfo != null && typeInfo.UnderlyingSystemType != _objectType)
+            {
+                var properties = from p in typeInfo.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+                                 let setMethod = p.GetSetMethod(false)
+                                 let getMethod = p.GetGetMethod(false)
+                                 where !p.GetCustomAttributes(typeof(NonClonedAttribute), true).Any()
+                                 where setMethod != null && getMethod != null && !p.GetIndexParameters().Any()
+                                 select p;
+
+                foreach (var p in properties)
+                {
+                    yield return p;
+                }
+
+                typeInfo = typeInfo.BaseType?.GetTypeInfo();
+            }
+        }
+
+        private struct BackingFieldInfo : IEquatable<BackingFieldInfo>
+        {
+            public Type DeclaredType { get; }
+            public string Name { get; set; }
+
+            public BackingFieldInfo(Type declaringType, string name) : this()
+            {
+                DeclaredType = declaringType;
+                Name = name;
+            }
+
+            public bool Equals(BackingFieldInfo other)
+            {
+                return other.DeclaredType == this.DeclaredType && other.Name == this.Name;
+            }
+
+            public override int GetHashCode()
+            {
+                return (17 * 23 + DeclaredType.GetHashCode()) * 23 + Name.GetHashCode();
+            }
+        }
     }
 }

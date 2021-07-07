@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>CloneExtensions.Benchmarks</RootNamespace>
+    <AssemblyName>CloneExtensions.Benchmarks</AssemblyName>
+    <TargetFrameworks>netcoreapp2.1;net461</TargetFrameworks>
+    <Version>1.4.2.0</Version>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" Version="0.10.9" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\CloneExtensionsEx\CloneExtensionsEx.csproj" />
+  </ItemGroup>
+</Project>

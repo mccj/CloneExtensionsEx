@@ -42,12 +42,12 @@ namespace CloneExtensionsEx
         public Action<ResolveArgs> customResolveFun { get; }
         public object GetClone(object source)
         {
-            var getCloneMethod = typeof(ResolveArgs).GetMethod(nameof(GetCloneEx),BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
+            var getCloneMethod = typeof(ResolveArgs).GetRuntimeMethod(nameof(GetCloneEx), new[] { typeof(string) }/*BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance*/);
             return getCloneMethod.MakeGenericMethod(PropertySourceType).Invoke(this, new object[] { source });
         }
-        public object GetClone(object source,Type type)
+        public object GetClone(object source, Type type)
         {
-            var getCloneMethod = typeof(ResolveArgs).GetMethod(nameof(GetCloneEx), BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
+            var getCloneMethod = typeof(ResolveArgs).GetRuntimeMethod(nameof(GetCloneEx), new[] { typeof(string) }/*BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance*/);
             return getCloneMethod.MakeGenericMethod(type).Invoke(this, new object[] { source });
         }
         private T GetCloneEx<T>(T source)

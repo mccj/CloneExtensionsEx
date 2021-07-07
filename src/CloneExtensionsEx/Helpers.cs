@@ -21,6 +21,10 @@ namespace CloneExtensionsEx
             );
         }
 
+        //public static Expression GetCloneMethodCall(Type type, Expression source, Expression flags, Expression initializers, Expression clonedObjects)
+        //{
+        //    return Expression.Call(typeof(CloneFactory), "GetClone", new[] { type }, source, flags, initializers, clonedObjects);
+        //}
         public static Expression GetCloneMethodCall(Type type, Expression source, System.Reflection.MemberInfo info, Type propertyType, Expression propertySource, Expression excludeNames, Expression flags, Expression initializers, Expression createObjectFun, Expression customResolveFun, Expression clonedObjects)
         {
             //return Expression.Call(typeof(CloneFactory), nameof(CloneFactory.GetClone), new[] { propertyType }, source, excludeNames, flags, initializers, createObjectFun, clonedObjects);
@@ -39,12 +43,17 @@ namespace CloneExtensionsEx
             );
         }
 
+        //public static T GetFromClonedObjects<T>(Dictionary<object, object> clonedObjects, T source)
+        //{
+        //    object returnValue;
+        //    clonedObjects.TryGetValue(source, out returnValue);
+        //    return returnValue != null ? (T)returnValue : default(T);
+        //}
         public static T GetFromClonedObjects<T>(Dictionary<object, object> clonedObjects, T source)
         {
             var key = clonedObjects.Keys.FirstOrDefault(k => ReferenceEquals(k, source));
             return key != null ? (T)clonedObjects[key] : default(T);
         }
-
         public static Expression 处理ExcludeNames(Expression itemCloneExpression, ParameterExpression excludeNames, Member member)
         {
 
@@ -99,7 +108,7 @@ namespace CloneExtensionsEx
             {
                 var _type = typeof(PropertyT);
                 var constructor = _type.GetConstructor(new Type[0]);
-                if (_type.IsAbstract || _type.IsInterface || (!_type.IsValueType && constructor == null))
+                if (_type.IsAbstract() || _type.IsInterface() || (!_type.IsValueType() && constructor == null))
                     Helpers.GetThrowInvalidOperationExceptionExpression(_type);
                 return CloneFactory.GetClone(propertySource, _excludeNames, flags, initializers, createObjectFun, customResolveFun, clonedObjects);
             }

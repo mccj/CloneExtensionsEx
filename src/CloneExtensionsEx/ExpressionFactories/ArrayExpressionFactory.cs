@@ -10,7 +10,7 @@ namespace CloneExtensionsEx.ExpressionFactories
     {
         private Type _itemType;
         private Expression _arrayLength;
-        private Expression _newArray;
+        protected Expression _newArray;
 
         public ArrayExpressionFactory(ParameterExpression source, Expression target, ParameterExpression excludeNames, ParameterExpression flags, ParameterExpression initializers, ParameterExpression createObjectFun, ParameterExpression customResolveFun, ParameterExpression clonedObjects)
             : base(source, target, excludeNames, flags, initializers, createObjectFun, customResolveFun, clonedObjects)
@@ -65,7 +65,7 @@ namespace CloneExtensionsEx.ExpressionFactories
         private static Type GetItemType()
         {
             return typeof(T).GetInterfaces()
-                            .First(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(ICollection<>))
+                            .First(x => x.IsGenericType() && x.GetGenericTypeDefinition() == typeof(ICollection<>))
                             .GetGenericArguments()
                             .First();
         }

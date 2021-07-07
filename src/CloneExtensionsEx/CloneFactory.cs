@@ -56,7 +56,7 @@ namespace CloneExtensionsEx
         {
             return GetClone(source, createObjectFun, null);
         }
-        public static T GetClone<T>(this T source,  Func<Type, object, object> createObjectFun, Action<ResolveArgs> customResolveFun)
+        public static T GetClone<T>(this T source, Func<Type, object, object> createObjectFun, Action<ResolveArgs> customResolveFun)
         {
             return GetClone(source,
             new string[] { },
@@ -86,7 +86,6 @@ namespace CloneExtensionsEx
             //return CloneManager<T>.Clone(source, excludeNames, flags, initializers, createObjectFun, clonedObjects);
             return GetClone(source, excludeNames, flags, initializers, createObjectFun, customResolveFun, new Dictionary<object, object>());
         }
-
         public static T GetClone<T>(this T source, string[] excludeNames, CloningFlags flags, IDictionary<Type, Func<object, object>> initializers, Func<Type, object, object> createObjectFun, Action<ResolveArgs> customResolveFun, Dictionary<object, object> clonedObjects)
         {
             if (clonedObjects == null)

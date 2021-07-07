@@ -8,7 +8,7 @@ namespace CloneExtensionsEx.ExpressionFactories
     abstract class DeepShallowExpressionFactoryBase<T> : ExpressionFactoryBase<T>
     {
         public DeepShallowExpressionFactoryBase(ParameterExpression source, Expression target, ParameterExpression excludeNames, ParameterExpression flags, ParameterExpression initializers, ParameterExpression createObjectFun, ParameterExpression customResolveFun, ParameterExpression clonedObjects)
-            : base(source, target, excludeNames, flags, initializers, createObjectFun,customResolveFun, clonedObjects)
+            : base(source, target, excludeNames, flags, initializers, createObjectFun, customResolveFun, clonedObjects)
         {
         }
 
@@ -34,8 +34,8 @@ namespace CloneExtensionsEx.ExpressionFactories
             return GetCloneExpression(SimpleReturnItemExpression);
         }
 
+        //protected abstract Expression GetCloneExpression(Func<Type, Expression, Expression> getItemCloneExpression);
         protected abstract Expression GetCloneExpression(Func<Type, Expression, MemberInfo, Type, Expression, Expression> getItemCloneExpression);
-
         protected Expression GetAddToClonedObjectsExpression()
         {
             return VerifyIfAlreadyClonedByReference
@@ -43,6 +43,10 @@ namespace CloneExtensionsEx.ExpressionFactories
                    : Expression.Empty();
         }
 
+        //private Expression SimpleReturnItemExpression(Type type, Expression item)
+        //{
+        //    return item;
+        //}
         private Expression SimpleReturnItemExpression(Type type, Expression source, System.Reflection.MemberInfo info, Type propertyType, Expression propertySource)
         {
             return propertySource;

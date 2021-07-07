@@ -15,9 +15,9 @@ namespace CloneExtensionsEx
             _clone = factory.GetCloneFunc();
         }
 
-        internal static T Clone(T source, string[] excludeNames, CloningFlags flags, IDictionary<Type, Func<object, object>> initializers, Func<Type,object, object> createObjectFun, Action<ResolveArgs> customResolveFun, Dictionary<object, object> clonedObjects)
+        internal static T Clone(T source, string[] excludeNames, CloningFlags flags, IDictionary<Type, Func<object, object>> initializers, Func<Type, object, object> createObjectFun, Action<ResolveArgs> customResolveFun, Dictionary<object, object> clonedObjects)
         {
-            return _clone(source,excludeNames, flags, initializers, createObjectFun,customResolveFun, clonedObjects);
+            return _clone(source, excludeNames, flags, initializers, createObjectFun, customResolveFun, clonedObjects);
         }
     }
 }
